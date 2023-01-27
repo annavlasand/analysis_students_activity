@@ -54,3 +54,10 @@ users_data = users_data.merge(users_days, how='outer')
 users_data.user_id.nunique() #проверка, не потеряли ли мы юзеров
 events_data.user_id.nunique() #проверка, не потеряли ли мы юзеров - все ок
 users_data['passed_corse'] = users_data.passed > 170 #условие окончания курса
+#проанализируем поведение пользователя за его первые несколько дней, чтобы понять уйдет ли он с курса
+#пробуем 3 дня
+users_data[users_data.passed_corse].day.median()
+user_min_time = events_data.groupby('user_id', as_index=False) \
+    .agg({'timestamp': 'min'}) \
+    .rename({'timestamp': 'min_timestamp'}, axis=1)
+users_data = users_data.merge(user_min_time, how='outer')
