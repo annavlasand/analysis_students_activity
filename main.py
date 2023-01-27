@@ -67,3 +67,28 @@ user_learning_time_threshold = user_min_time.user_id.map(str) + '_' + (user_min_
 user_min_time['user_learning_time_threshold'] = user_learning_time_threshold
 events_data = events_data.merge(user_min_time[['user_id', 'user_learning_time_threshold']], how='outer')
 events_data_train = events_data[events_data.user_time <= events_data.user_learning_time_threshold]
+
+submissions_data['users_time'] = submissions_data.user_id.map(str) + '_' + submissions_data.timestamp.map(str)
+submissions_data = submissions_data.merge(user_min_time[['user_id', 'user_learning_time_threshold']], how='outer')
+submissions_data_train = submissions_data[submissions_data.users_time <= submissions_data.user_learning_time_threshold]
+
+X = submissions_data_train.groupby('user_id').day.nunique().to_frame().reset_index() \
+    .rename(columns={'day': 'days'})
+steps_tried = submissions_data_train.groupby('user_id').step_id.nunique().to_frame().reset_index() \
+    .rename(columns={'step_id': 'steps_tried'})
+
+X = X.merge(steps_tried, on='user_id', how='outer')
+
+X = X.merge(submissions_data_train.pivot_table(index='user_id',
+                        columns='submission_status',
+                        values='step_id',
+                        aggfunc='count',
+                        fill_value=0).reset_index())
+X['correct_ratio'] = X.correct  / (X.correct + X.wrong)
+
+X = X.merge(events_data_train.pivot_table(index='user_id',
+                        columns='action',
+                        values='step_id',
+                        aggfunc='count',
+                        fill_value=0).reset_index()[['user_id', 'viewed']], how='outer')
+X = X.fillna(0)
