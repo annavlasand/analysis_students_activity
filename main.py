@@ -61,3 +61,9 @@ user_min_time = events_data.groupby('user_id', as_index=False) \
     .agg({'timestamp': 'min'}) \
     .rename({'timestamp': 'min_timestamp'}, axis=1)
 users_data = users_data.merge(user_min_time, how='outer')
+events_data['user_time'] = events_data.user_id.map(str) + events_data.timestamp.map(str)
+learning_time_threshold = 3 * 24 * 60 * 60
+user_learning_time_threshold = user_min_time.user_id.map(str) + '_' + (user_min_time.min_timestamp + learning_time_threshold).map(str)
+user_min_time['user_learning_time_threshold'] = user_learning_time_threshold
+events_data = events_data.merge(user_min_time[['user_id', 'user_learning_time_threshold']], how='outer')
+events_data_train = events_data[events_data.user_time <= events_data.user_learning_time_threshold]
