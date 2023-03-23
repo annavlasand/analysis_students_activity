@@ -92,3 +92,12 @@ X = X.merge(events_data_train.pivot_table(index='user_id',
                         aggfunc='count',
                         fill_value=0).reset_index()[['user_id', 'viewed']], how='outer')
 X = X.fillna(0)
+
+X = X.merge(users_data[['user_id', 'passed_corse', 'is_gone_user']], how='outer')
+X = X[-((X.is_gone_user == False) & (X.passed_corse == False))]
+X.groupby(['passed_corse', 'is_gone_user']).user_id.count()
+y = X.passed_corse
+X = X.drop(['passed_corse', 'is_gone_user'], axis=1)
+
+X = X.set_index(X.user_id)
+X = X.drop('user_id', axis=1)
